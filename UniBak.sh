@@ -1,12 +1,12 @@
 #!/bin/bash
 #---------------------------------------------------------------------------------------
 #title: "UniBak" Unix Backup and Restore Script
-version="0.20.8"
+version="0.21.0"
 #author: Matt Hooker
 #created: 2013-10-28
 #maintainer: Matt Hooker
 #contributors: Michaela Bixler
-modifiedDate="2020-02-21"
+modifiedDate="2020-02-25"
 devVar="n" #set to "y" when developing to prevent overwriting
 #---------------------------------------------------------------------------------------
 # this script is a multiplatform branch of MacBak v1.5.2, which was originally written by Dave Culp and updated by Matt Hooker before adapting to multiplatform
@@ -65,8 +65,8 @@ elif [[ "$uname" == *Darwin* ]] || [[ "$uname" == *Mac* ]] #detects Darwin kerne
 		exit 2
 fi
 ###configurable variables:################################################################
-scriptRepo="http://helpdesk.liberty.edu/hdtools/scripts" #web link for downloading script update
-scriptRepoDevWeb="http://helpdesk.liberty.edu/hdtools/Tech%20Projects%20&%20Source%20Code%20Files/$(echo "$baseName" | awk -F '.sh' '{print $1}')/development%20version" #web link for downloading dev version of script
+scriptRepo="https://github.com/JFcavedweller/$(echo "$baseName" | awk -F '.sh' '{print $1}')/blob/master" #web link for downloading script update
+scriptRepoDevWeb="http://helpdesk.liberty.edu/hdtools/Tech%20Projects%20&%20Source%20Code%20Files/$(echo "$baseName" | awk -F '.sh' '{print $1}')/development%20version" #web link for downloading dev version of script PLEASE UPDATE #debug
 if [ $(date +%j) -gt 181 ] #determines the fiscal year based on 7/1-6/30
 	then
 		fiscalYear=$(($(date +%Y)+1)) #current year +1 if currently in the next calendar year's fiscal year
@@ -175,47 +175,47 @@ function fncSelfUpdater { #script self-updater frev=11 fmod=0 frevDate=2019-10-0
 		else
 			if [[ "$uname" == *Linux* ]] #VPN connection required to access helpdesk.liberty.edu/hdtools, checks first for Linux
 				then
-					if [ ! -e /usr/sbin/openconnect ] #if openconnect is not installed, install it
-						then
-							packages=(openconnect)
-							fncMasterInstaller
-					fi
-					if ! ps -A | grep openconnect > /dev/null #if openconnect is not running, run it
-						then
-							echo "Connecting to vpn.liberty.edu..."
-							openconnect vpn.liberty.edu -b #connects to vpn.liberty.edu
-							vpnConnected="true" #variable used to determine whether the session should be disconnected later
-					fi
+					#if [ ! -e /usr/sbin/openconnect ] #if openconnect is not installed, install it
+					#	then
+					#		packages=(openconnect)
+					#		fncMasterInstaller
+					#fi
+					#if ! ps -A | grep openconnect > /dev/null #if openconnect is not running, run it
+					#	then
+					#		echo "Connecting to vpn.liberty.edu..."
+					#		openconnect vpn.liberty.edu -b #connects to vpn.liberty.edu
+					#		vpnConnected="true" #variable used to determine whether the session should be disconnected later
+					#fi
 					sleep 2
 					echo
 					echo "Downloading fresh copy of $baseName..."
 					wget --no-check-certificate -qO "$prodScript" "$scriptRepoSelection/$baseName" #downloads fresh copy of script to tmpDir
 					fncSelfUpdater_doTheThing
-					if [ "$vpnConnected" = "true" ]
-						then
-							killall openconnect
-							vpnConnected=""
-					fi
+					#if [ "$vpnConnected" = "true" ]
+					#	then
+					#		killall openconnect
+					#		vpnConnected=""
+					#fi
 				else #assumes mac if not Linux
 					if [ -e /opt/cisco/anyconnect ] #if anyconnect is installed, call it
 						then
-							if ! ps -A | grep anyconnect > /dev/null #if openconnect is not running, run it
-								then
-									echo "Connecting to vpn.liberty.edu..."
-									anyconnect connect vpn.liberty.edu #connects to vpn.liberty.edu
-									vpnConnected="true" #variable used to determine whether the session should be disconnected later
-							fi
+							#if ! ps -A | grep anyconnect > /dev/null #if openconnect is not running, run it
+							#	then
+							#		echo "Connecting to vpn.liberty.edu..."
+							#		anyconnect connect vpn.liberty.edu #connects to vpn.liberty.edu
+							#		vpnConnected="true" #variable used to determine whether the session should be disconnected later
+							#fi
 							sleep 2
 							echo
 							echo "Downloading fresh copy of $baseName..."
 							curl -fskL -o "$prodScript" "$scriptRepoSelection/$baseName" #downloads fresh copy of script to tmpDir
 							fncSelfUpdater_doTheThing
-								if [ "$vpnConnected" = "true" ]
-									then
-										echo "Disconnecting from vpn.liberty.edu..."
-										killall anyconnect
-										vpnConnected=""
-								fi
+								#if [ "$vpnConnected" = "true" ]
+								#	then
+								#		echo "Disconnecting from vpn.liberty.edu..."
+								#		killall anyconnect
+								#		vpnConnected=""
+								#fi
 					fi
 			fi
 	fi
