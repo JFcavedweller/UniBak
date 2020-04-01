@@ -1,7 +1,7 @@
 #!/bin/bash
 #---------------------------------------------------------------------------------------
 #title: "UniBak" Unix Backup and Restore Script
-version="0.21.2"
+version="0.21.3"
 #author: Matt Hooker
 #created: 2013-10-28
 #maintainer: Matt Hooker
@@ -73,7 +73,7 @@ if [ $(date +%j) -gt 181 ] #determines the fiscal year based on 7/1-6/30
 	else
 		fiscalYear=$(date +%Y) #current year if calendar and fiscal years match
 fi
-server=("fs3.liberty.edu") #list of servers to be recursively mounted when fncServerMount is called
+server=("10.255.245.36") #list of servers to be recursively mounted when fncServerMount is called
 share=("hdbackups") #list of shares to be recursively mounted when fncServerMount is called, and the index of this list must match server
 mountpoint=("hdbackups") #list of mount point names to be recursively mounted when fncServerMount is called, and the index of this list must match server
 likewisePath="likewise-open/SENSENET" #if using likewise-open to handle domain account logins, specify the path here
@@ -926,9 +926,9 @@ function fncServerMount { #created from mountdrives.sh v1.3 written by Matt Hook
 						then
 							if [[ "$serverPassword" == *@* ]] || [[ "$serverPassword" == *#* ]] || [[ "$serverPassword" == *!* ]] #list of password characters that interfere with mount.cifs
 								then
-									mount -t cifs -o username="$serverUsername",domain="SENSENET",uid=$currentUID,vers=2.1 "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux but does not use the password string
+									mount -t cifs -o username="$serverUsername",domain="SENSENET",uid=$currentUID "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux but does not use the password string
 								else
-									mount -t cifs -o username="$serverUsername",password="$serverPassword",domain="SENSENET",uid=$currentUID,vers=2.1 "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux using the validated password
+									mount -t cifs -o username="$serverUsername",password="$serverPassword",domain="SENSENET",uid=$currentUID "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux using the validated password
 							fi
 					elif [[ "$serverPassword" == *@* ]] #the symbol "@" will break the mount_smbfs line, so a variation of the command will be used
 						then
