@@ -1,12 +1,12 @@
 #!/bin/bash
 #---------------------------------------------------------------------------------------
 #title: "UniBak" Unix Backup and Restore Script
-version="0.21.1"
+version="0.21.2"
 #author: Matt Hooker
 #created: 2013-10-28
 #maintainer: Matt Hooker
 #contributors: Michaela Bixler
-modifiedDate="2020-02-25"
+modifiedDate="2020-04-01"
 devVar="n" #set to "y" when developing to prevent overwriting
 #---------------------------------------------------------------------------------------
 # this script is a multiplatform branch of MacBak v1.5.2, which was originally written by Dave Culp and updated by Matt Hooker before adapting to multiplatform
@@ -926,9 +926,9 @@ function fncServerMount { #created from mountdrives.sh v1.3 written by Matt Hook
 						then
 							if [[ "$serverPassword" == *@* ]] || [[ "$serverPassword" == *#* ]] || [[ "$serverPassword" == *!* ]] #list of password characters that interfere with mount.cifs
 								then
-									mount.cifs -o username="$serverUsername",domain="SENSENET",uid=$currentUID,vers=1.0 "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux but does not use the password string
+									mount -t cifs -o username="$serverUsername",domain="SENSENET",uid=$currentUID,vers=2.1 "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux but does not use the password string
 								else
-									mount.cifs -o username="$serverUsername",password="$serverPassword",domain="SENSENET",uid=$currentUID,vers=1.0 "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux using the validated password
+									mount -t cifs -o username="$serverUsername",password="$serverPassword",domain="SENSENET",uid=$currentUID,vers=2.1 "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux using the validated password
 							fi
 					elif [[ "$serverPassword" == *@* ]] #the symbol "@" will break the mount_smbfs line, so a variation of the command will be used
 						then
