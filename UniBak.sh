@@ -1,12 +1,12 @@
 #!/bin/bash
 #---------------------------------------------------------------------------------------
 #title: "UniBak" Unix Backup and Restore Script
-version="0.21.3"
+version="0.21.4"
 #author: Matt Hooker
 #created: 2013-10-28
 #maintainer: Matt Hooker
 #contributors: Michaela Bixler
-modifiedDate="2020-04-01"
+modifiedDate="2022-11-03"
 devVar="n" #set to "y" when developing to prevent overwriting
 #---------------------------------------------------------------------------------------
 # this script is a multiplatform branch of MacBak v1.5.2, which was originally written by Dave Culp and updated by Matt Hooker before adapting to multiplatform
@@ -73,7 +73,7 @@ if [ $(date +%j) -gt 181 ] #determines the fiscal year based on 7/1-6/30
 	else
 		fiscalYear=$(date +%Y) #current year if calendar and fiscal years match
 fi
-server=("10.255.245.36") #list of servers to be recursively mounted when fncServerMount is called
+server=("fs3.liberty.edu") #list of servers to be recursively mounted when fncServerMount is called
 share=("hdbackups") #list of shares to be recursively mounted when fncServerMount is called, and the index of this list must match server
 mountpoint=("hdbackups") #list of mount point names to be recursively mounted when fncServerMount is called, and the index of this list must match server
 likewisePath="likewise-open/SENSENET" #if using likewise-open to handle domain account logins, specify the path here
@@ -878,7 +878,7 @@ function fncAppDataHandler { #called during fncBackupXtra, this reads the appDat
 				fi
 			done
 }
-function fncServerMount { #created from mountdrives.sh v1.3 written by Matt Hooker frev=12 fmod=0 frevDate=2020-02-21
+function fncServerMount { #created from mountdrives.sh v1.3 written by Matt Hooker frev=14 fmod=0 frevDate=2022-11-02
 	#be sure that fncUserIdentifier, $uname, $currentUser, $currentUID, ${server}, ${share}, ${mountpoint}, and $mountPrefix are globally available
 	clear
 	if [[ "$uname" == *Linux* ]] #if linux, make sure cifs-utils is installed
@@ -889,27 +889,30 @@ function fncServerMount { #created from mountdrives.sh v1.3 written by Matt Hook
 	fncUserIdentifier
 	echo "$baseName will attempt to mount one or more servers to $mountPrefix/ as user $serverUsername..."
 	echo
-	for i in ${!mountpoint[*]}
+	for serverIndex in ${!mountpoint[*]}
 	do
-		if ping -c 1 ${server[$i]} 2>&1&> /dev/null
+		targetServer=${server[$serverIndex]} #moves array item to a separate variable, because it may be changed for workarounds
+		if ping -c 1 $targetServer 2>&1&> /dev/null #checks that server is found
 			then
-				if [[ $(ls -l "$mountPrefix/${mountpoint[$i]}" | awk -F '-' '{print $1}') != *drwx* ]] #if the server has no writeable folders, then unmount to remount
+				if [ ! -d "$mountPrefix/${mountpoint[$serverIndex]}" ] #if server mount location doesn't exist, create it
 					then
-						umount "$mountPrefix/${mountpoint[$i]}" 2> /dev/null
+						mkdir -p "$mountPrefix/${mountpoint[$serverIndex]}"
+				fi
+				if [[ $(ls -l "$mountPrefix/${mountpoint[$serverIndex]}" | awk -F '-' '{print $1}') != *drwx* ]] #if the server has no writeable folders, then unmount to remount
+					then
+						umount "$mountPrefix/${mountpoint[$serverIndex]}" 2> /dev/null
 						sleep 2
 				fi
-				if [ ! -d "$mountPrefix/${mountpoint[$i]}" ] #if server mount location doesn't exist, create it
-					then
-						mkdir -p "$mountPrefix/${mountpoint[$i]}"
-				fi
-				chmod 600 "$mountPrefix/${mountpoint[$i]}"
-				blnAuthFailure=0
+				chmod 600 "$mountPrefix/${mountpoint[$serverIndex]}"
+				blnAuthFailure=0 #keeps track of failures to connect
+				blnConvertIP=0
+				maxAttempts=2 #max number of retries, may be changed if attempting alternate server addresses
 				while true
 				do
-					if df | grep ${mountpoint[$i]} 2>&1&> /dev/null #can proceed to the next network location shows in mount points
+					if df | grep ${mountpoint[$serverIndex]} 2>&1&> /dev/null #can proceed to the next network location shows in mount points
 						then
-							echo "\\\\${server[$i]}\\${share[$i]} is mounted to $mountPrefix/${mountpoint[$i]}"
-							serverMountSuccess[$i]="true"
+							echo "\\\\$targetServer\\${share[$serverIndex]} is mounted to $mountPrefix/${mountpoint[$serverIndex]}"
+							serverMountSuccess[$serverIndex]="true"
 							blnAuthFailure=0
 							break
 					elif [ ! -n "$serverPassword" ]
@@ -921,56 +924,100 @@ function fncServerMount { #created from mountdrives.sh v1.3 written by Matt Hook
 							fi
 							echo
 					fi
-					echo "attempting to mount \\\\${server[$i]}\\${share[$i]} to $mountPrefix/${mountpoint[$i]}..."
+					echo "attempting to mount \\\\$targetServer\\${share[$serverIndex]} to $mountPrefix/${mountpoint[$serverIndex]}..."
 					if [[ "$uname" == *Linux* ]]
 						then
 							if [[ "$serverPassword" == *@* ]] || [[ "$serverPassword" == *#* ]] || [[ "$serverPassword" == *!* ]] #list of password characters that interfere with mount.cifs
 								then
-									mount -t cifs -o username="$serverUsername",domain="SENSENET",uid=$currentUID "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux but does not use the password string
+									mount -t cifs -o username="$serverUsername",domain="SENSENET",uid=$currentUID "\\\\$targetServer\\${share[$serverIndex]}" "$mountPrefix/${mountpoint[$serverIndex]}" #mounts the server in Linux but does not use the password string
 								else
-									mount -t cifs -o username="$serverUsername",password="$serverPassword",domain="SENSENET",uid=$currentUID "\\\\${server[$i]}\\${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in Linux using the validated password
+									mount -t cifs -o username="$serverUsername",password="$serverPassword",domain="SENSENET",uid=$currentUID "\\\\$targetServer\\${share[$serverIndex]}" "$mountPrefix/${mountpoint[$serverIndex]}" #mounts the server in Linux using the validated password
 							fi
 					elif [[ "$serverPassword" == *@* ]] #the symbol "@" will break the mount_smbfs line, so a variation of the command will be used
 						then
 							echo "Illegal character detected in password. Please re-enter password when prompted."
-							mount_smbfs //"$serverUsername@${server[$i]}/${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in OSX, but without password
+							mount_smbfs //"$serverUsername@$targetServer/${share[$serverIndex]}" "$mountPrefix/${mountpoint[$serverIndex]}" #mounts the server in OSX, but without password
 						else
-							mount_smbfs //"$serverUsername:$serverPassword@${server[$i]}/${share[$i]}" "$mountPrefix/${mountpoint[$i]}" #mounts the server in OSX
+							mount_smbfs //"$serverUsername:$serverPassword@$targetServer/${share[$serverIndex]}" "$mountPrefix/${mountpoint[$serverIndex]}" #mounts the server in OSX
 					fi
-					if [ ! "$(ls -A $mountPrefix/${mountpoint[$i]})" ] #check to alert if the serverpath does not exist
-						then
-							sleep 2
-					fi
-					if [ ! "$(ls -A $mountPrefix/${mountpoint[$i]})" ] #check to alert if the serverpath does not exist
+					sleep 2 #delay to account for any lag
+					if [ ! "$(df | grep "$mountPrefix/${mountpoint[$serverIndex]}")" ] #check to alert if the serverpath does not exist
 						then
 							let "blnAuthFailure += 1"
+						else
+							serverMountSuccess[$serverIndex]="true"
+							blnAuthFailure=0
+							break
 					fi
-					if [ "$blnAuthFailure" -gt "0" ]
+					if [ "$blnAuthFailure" -gt "$maxAttempts" ]
 						then
-							clear
-							echo "Attempt to mount server by $serverUsername failed."
-							echo "Check network connection and account, then try password again."
-							read -s -p "Password: " serverPassword
-							clear
-					fi
-					if [ "$blnAuthFailure" -gt "1" ]
-						then
-							clear
-							menuTitle="Login failed at least twice. Skip server \\\\${server[$i]}\\${share[$i]}?."
+							#clear
+							menuTitle="Login failed too many times. Skip server \\\\$targetServer\\${share[$serverIndex]}?."
 							menuList=(yes no)
 							fncMenuGenerator
 							if [ "$menuOutput" = "yes" ] #if yes, then removes share from list and moves to next item. else, continues to retry at risk of locking account
 								then
-									unset server[$i]
-									unset share [$i]
-									unset mountpoint[$i]
+									serverMountSuccess[$serverIndex]="false"
+									unset server[$serverIndex]
+									unset share [$serverIndex]
+									unset mountpoint[$serverIndex]
 									break
 							fi
 					fi
+					if [ "$blnAuthFailure" -gt "0" ]
+						then
+							#clear
+							echo "Attempt to mount server $targetServer by $serverUsername failed."
+							#flag
+							if [ "$blnConvertIP" = 0 ]
+								then
+									menuTitle="Try alternate server address or retry password?"
+									menuList=("Alternate server address" "Retry password")
+									fncMenuGenerator
+							elif [ "$blnAuthFailure" = "$maxAttempts" ]
+								then
+									menuTitle="All addresses attempted. retry password?"
+									menuList=(yes no)
+									fncMenuGenerator
+									targetServer=${server[$serverIndex]}
+								else
+									menuTitle="Try next alternate server address or retry password?"
+									menuList=("Next address" "Retry password")
+									fncMenuGenerator
+							fi
+							if [ "$menuOutput" = "Alternate server address" ]
+								then
+									serverVariants=($(host ${server[$serverIndex]} | awk '/is an alias for/ { print substr($6, 1, length($6)-1)}') $(host ${server[$serverIndex]} | awk '/has address/ { print $4 }')) # creates array that includes the original server hostname and any detected alias and IP addresses.
+									blnAuthFailure=0 #resets because we're trying alternate addresses instead. will now also be used for indexing variants array
+									blnConvertIP=1 #changes above menu
+									let "maxAttempts = ${#serverVariants[@]}" #allows additional attempts to try connecting to server, based on number of addresses to try (one less than length of array because not retrying original)
+									targetServer=${serverVariants[$blnAuthFailure]}
+							elif [ "$menuOutput" = "Next address" ]
+								then
+									if [ "${#serverVariants[@]}" -gt "$blnAuthFailure" ]
+										then
+											targetServer=${serverVariants[$blnAuthFailure]}
+										else
+											targetServer=${server[$serverIndex]}
+									fi
+							elif [ "$menuOutput" = "no" ]
+								then
+									unset server[$serverIndex]
+									unset share [$serverIndex]
+									unset mountpoint[$serverIndex]
+									break
+								else
+									echo "Check account, then try password again."
+									read -s -p "Password: " serverPassword
+							fi
+							#debug
+							
+							#clear
+					fi
 				done
 			else
-				echo "Unable to ping ${server[$i]}. Skipping mount."
-				serverMountSuccess[$i]="false"
+				echo "Unable to ping $targetServer. Skipping mount."
+				serverMountSuccess[$serverIndex]="false"
 		fi
 	done
 } #end fncServerMount
