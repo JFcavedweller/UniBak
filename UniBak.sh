@@ -1,7 +1,7 @@
 #!/bin/bash
 #---------------------------------------------------------------------------------------
 #title: "UniBak" Unix Backup and Restore Script
-version="0.21.6"
+version="0.21.7"
 #author: Matt Hooker
 #created: 2013-10-28
 #maintainer: Matt Hooker
@@ -65,7 +65,7 @@ elif [[ "$uname" == *Darwin* ]] || [[ "$uname" == *Mac* ]] #detects Darwin kerne
 		exit 2
 fi
 ###configurable variables:################################################################
-scriptRepo="https://bitbucket.liberty.edu/projects/IHL/repos/$(echo "$baseName" | awk -F '.sh' '{print $1}')" #web link for downloading script update
+scriptRepo="https://raw.githubusercontent.com/JFcavedweller/$(echo "$baseName" | awk -F '.sh' '{print $1}')/master" #web link for downloading script update
 scriptRepoDevWeb="http://helpdesk.liberty.edu/hdtools/Tech%20Projects%20&%20Source%20Code%20Files/$(echo "$baseName" | awk -F '.sh' '{print $1}')/development%20version" #web link for downloading dev version of script PLEASE UPDATE #debug
 if [ $(date +%j) -gt 181 ] #determines the fiscal year based on 7/1-6/30
 	then
