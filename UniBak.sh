@@ -1,12 +1,12 @@
 #!/bin/bash
 #---------------------------------------------------------------------------------------
 #title: "UniBak" Unix Backup and Restore Script
-version="0.21.4"
+version="0.21.5"
 #author: Matt Hooker
 #created: 2013-10-28
 #maintainer: Matt Hooker
 #contributors: Michaela Bixler
-modifiedDate="2022-11-03"
+modifiedDate="2024-11-27"
 devVar="n" #set to "y" when developing to prevent overwriting
 #---------------------------------------------------------------------------------------
 # this script is a multiplatform branch of MacBak v1.5.2, which was originally written by Dave Culp and updated by Matt Hooker before adapting to multiplatform
@@ -1150,9 +1150,9 @@ function fncBackupPrep {
 				then
 					echo "-m switch used, will exclude any .exe or .zip files from Downloads, Desktop, Pictures, Music" 2>&1 | tee -a "$backupDir/$logfileName"
 					echo 2>&1 | tee -a "$backupDir/$logfileName"
-					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/AppData" -o -iwholename "$source/$userProfile/Dropbo[\ \(\)[:alpha:]]*" -o -iwholename "$source/$userProfile/Google Drive" -o -iwholename "$source/$userProfile/SkyDrive" -o -iwholename "$source/$userProfile/OneDriv[\ \-\(\)[:alpha:]]*" \) -prune -o -print | grep -Ev "Desktop/.+\.[Ll][Nn][Kk]|\.instrea.+|[Nn][Tt][Uu][Ss][Ee][Rr]\..+|/[Dd]esktop\.[Ii][Nn][Ii]|/Thumbs\.db|\.recently\-used\.xbel|.+\.scr|~\$.+|$source/$userProfile/(Desktop|Downloads|Pictures|Music|Videos)+/.+\.([Ee][Xx][Ee]|[Zz][Ii][Pp])" | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
+					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/AppData" -o -regex "$source/$userProfile"/.*\ Dropbox -o -regex "$source/$userProfile"/Dropbox\ \(.*\) -o -iwholename "$source/$userProfile/Google Drive" -o -iwholename "$source/$userProfile/SkyDrive" -o -regex "$source/$userProfile"/OneDrive.* -o -iwholename "$source/$userProfile/iCloud Drive" \) -prune -o -print | grep -Ev "Desktop/.+\.[Ll][Nn][Kk]|\.instrea.+|[Nn][Tt][Uu][Ss][Ee][Rr]\..+|/[Dd]esktop\.[Ii][Nn][Ii]|/Thumbs\.db|\.recently\-used\.xbel|.+\.scr|~\$.+|$source/$userProfile/(Desktop|Downloads|Pictures|Music|Videos)+/.+\.([Ee][Xx][Ee]|[Zz][Ii][Pp])" | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
 				else
-					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/AppData" -o -iwholename "$source/$userProfile/Dropbo[\ \(\)[:alpha:]]*" -o -iwholename "$source/$userProfile/Google Drive" -o -iwholename "$source/$userProfile/SkyDrive" -o -iwholename "$source/$userProfile/OneDriv[\ \-\(\)[:alpha:]]*" \) -prune -o -print | grep -Ev 'Desktop/.+\.[Ll][Nn][Kk]|\.instrea.+|[Nn][Tt][Uu][Ss][Ee][Rr]\..+|/[Dd]esktop\.[Ii][Nn][Ii]|/Thumbs\.db|\.recently\-used\.xbel|.+\.scr|~\$.+' | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
+					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/AppData" -o -regex "$source/$userProfile"/.*\ Dropbox -o -regex "$source/$userProfile"/Dropbox\ \(.*\) -o -iwholename "$source/$userProfile/Google Drive" -o -iwholename "$source/$userProfile/SkyDrive" -o -regex "$source/$userProfile"/OneDrive.* -o -iwholename "$source/$userProfile/iCloud Drive" \) -prune -o -print | grep -Ev 'Desktop/.+\.[Ll][Nn][Kk]|\.instrea.+|[Nn][Tt][Uu][Ss][Ee][Rr]\..+|/[Dd]esktop\.[Ii][Nn][Ii]|/Thumbs\.db|\.recently\-used\.xbel|.+\.scr|~\$.+' | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
 			fi
 	elif [ "$platformMode" == "linux4mac" ] || [ "$platformMode" == "mac4mac" ] #backing up Mac
 		then
@@ -1160,16 +1160,16 @@ function fncBackupPrep {
 				then
 					echo "-m switch used, will exclude any .exe, .zip, .dmg, .rdp, .app files from Downloads" 2>&1 | tee -a "$backupDir/$logfileName"
 					echo 2>&1 | tee -a "$backupDir/$logfileName"
-					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/.Trash" -o -iwholename "$source/$userProfile/Library" -o -iwholename "$source/$userProfile/Dropbo[\ \(\)[:alpha:]]*" -o -iwholename "$source/$userProfile/Google Drive" \) -prune -o -print | grep -Ev ".+\.localized|.+/About [[:alpha:]]+\.lpdf/.*|$source/$userProfile/Downloads/.+\.([Ee][Xx][Ee]|[Zz][Ii][Pp]|[Dd][Mm][Gg]|[Aa][Pp][Pp]|rdp)" | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
+					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/.Trash" -o -iwholename "$source/$userProfile/.dropbox" -o -iwholename "$source/$userProfile/Library" -o -regex "$source/$userProfile"/.*\ Dropbox -o -regex "$source/$userProfile"/Dropbox\ \(.*\) -o -iwholename "$source/$userProfile/Google Drive" -o -iwholename "$source/$userProfile/SkyDrive" -o -regex "$source/$userProfile"/OneDrive.* \) -prune -o -print | grep -Ev ".+\.localized|.+/About [[:alpha:]]+\.lpdf/.*|$source/$userProfile/Downloads/.+\.([Ee][Xx][Ee]|[Zz][Ii][Pp]|[Dd][Mm][Gg]|[Aa][Pp][Pp]|rdp)" | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
 				else
-					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/.Trash" -o -iwholename "$source/$userProfile/Library" -o -iwholename "$source/$userProfile/Dropbo[\ \(\)[:alpha:]]*" -o -iwholename "$source/$userProfile/Google Drive" \) -prune -o -print | grep -Ev ".+\.localized|.+/About [[:alpha:]]+\.lpdf/.*" | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
+					find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/.Trash" -o -iwholename "$source/$userProfile/.dropbox" -o -iwholename "$source/$userProfile/Library" -o -regex "$source/$userProfile"/.*\ Dropbox -o -regex "$source/$userProfile"/Dropbox\ \(.*\) -o -iwholename "$source/$userProfile/Google Drive" -o -iwholename "$source/$userProfile/SkyDrive" -o -regex "$source/$userProfile"/OneDrive.* \) -prune -o -print | grep -Ev ".+\.localized|.+/About [[:alpha:]]+\.lpdf/.*" | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
 			fi
 		else #backing up Linux
-			find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/.trash" -o -iwholename "$source/$userProfile/.cache" -o -iwholename "$source/$userProfile/.dropbox" -o -iwholename "$source/$userProfile/.dropbox-dist" -o -iwholename "$source/$userProfile/.local" -o -iwholename "$source/$userProfile/Dropbox" \) -prune -o -print | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
+			find "$source/$userProfile" -type d \( -iwholename "$source/$userProfile/.trash" -o -iwholename "$source/$userProfile/.cache" -o -iwholename "$source/$userProfile/.dropbox" -o -iwholename "$source/$userProfile/.dropbox-dist" -o -iwholename "$source/$userProfile/.local" -o -regex "$source/$userProfile"/.*\ Dropbox -o -regex "$source/$userProfile"/Dropbox\ \(.*\) \) -prune -o -print | sed "s@$sourceDrive@@" >> "$sourceFilesList" #this filters out what should not be backed up from the main locations, and saves it in a list at the location specified for $sourceFilesList
 	fi
 	if [ "$dropboxSelected" = "yes" ]
 		then
-			ls "$source/$userProfile" | grep -E 'Dropbo[\ \(\)[:alpha:]]*' > "$tmpfile"
+			ls "$source/$userProfile" | grep -E '[\ [:alpha:]]*Dropbox[\ \(\)[:alpha:]]*' > "$tmpfile"
 			while read line
 			do
 				find "$source/$userProfile/$line" -type f | sed "s@$sourceDrive@@" >> "$sourceFilesList"
